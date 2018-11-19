@@ -63,5 +63,10 @@ Login: admin
 Password: admin
 ```
 
+## API Endpoints
 
+```
+[GET] /api/articles
+[GET] /api/article/{id}
+```
 
