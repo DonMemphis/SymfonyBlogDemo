@@ -1,0 +1,40 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin for my blog{% endblock %}
+
+{% block header %}
+    <div class="container py-3">
+        <a href="{{ path('admin') }}"><h1>Admin</h1></a>
+        <hr>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="text-right"><a href="{{ path('admin') }}">
+            <button class="btn btn-secondary">Back</button>
+        </a></div>
+
+    {{ form_start(form) }}
+    {{ form_row(form.title) }}
+    {{ form_row(form.date) }}
+    {{ form_row(form.text) }}
+
+    <h5>Tags:</h5>
+    {% for tag in article.tags %}
+        <a href="{{ path('admin_article_remove_tag', {'articleId': article.id, 'tagId': tag.id }) }}">
+            <button type="button" class="btn btn-secondary">
+                {{ tag.name }} <span class="badge badge-danger">X</span>
+            </button>
+        </a>
+    {% endfor %}
+
+    <div class="form-group mt-2">
+        <input type="text" id="form_new_tag" name="new_tag" class="form-control" value="" placeholder="Add new tag...">
+    </div>
+
+    {{ form_end(form) }}
+{% endblock %}
+
+{% block javascripts %}
+    <script src="//cdn.ckeditor.com/4.11.1/standard/ckeditor.js"></script>
+{% endblock %}

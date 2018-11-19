@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin: Blog{% endblock %}
+
+{% block header %}
+    <div class="container py-3">
+        <h1>Admin</h1>
+        <hr>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <a href="{{ path('admin_article_create') }}"><button class="btn btn-primary"><i class="fas fa-edit"></i> Create new article</button></a>
+    {% for article in articles %}
+        <div class="article mt-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <a href="{{ path('admin_article_edit', {'id': article.id}) }}"><h3>{{ article.title }}</h3></a>
+                </div>
+                <div class="col-md-3 text-center">
+                    <span>{{ article.createdAt }}</span><br>
+                    <span>(views: {{ article.views }})</span>
+                </div>
+                <div class="col-md-1 text-center">
+                    <a href="{{ path('admin_article_toggle_visibility', {'id': article.id}) }}"><button class="btn btn-{% if article.active %}primary{% else %}secondary{% endif %}"><i class="far fa-eye"></i> {% if article.active %}Active{% else %}Hidden{% endif %}</button></a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
