@@ -63,7 +63,7 @@ class AdminController extends AbstractController
 	/**
 	 * @Route("/admin/article/{id}", name="admin_article_edit")
 	 */
-	public function articleEdit($id, Request $request): Response
+	public function articleEdit($id, Request $request, Slugify $slugify): Response
 	{
 		$entityManager = $this->getDoctrine()->getManager();
 		$repository = $this->getDoctrine()->getRepository(Article::class);
@@ -99,7 +99,6 @@ class AdminController extends AbstractController
 				$articleEntity->addTag($tagEntity);
 			}
 
-			$slugify = new Slugify();
 			$articleEntity->setUrl($slugify->slugify($articleEntity->getId().'-'.$articleEntity->getTitle()));
 
 			$entityManager->persist($articleEntity);
