@@ -3,11 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Tag;
+use App\Form\ArticleType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -24,8 +21,7 @@ class AdminController extends AbstractController
 	{
 		$repository = $this->getDoctrine()->getRepository(Article::class);
 
-		$articles = $repository->findBy([],
-			['date' => 'DESC']);
+		$articles = $repository->getArticlesOrderedByDate();
 
 		return $this->render('admin/index.html.twig', [
 			'articles' => $articles,
@@ -37,25 +33,9 @@ class AdminController extends AbstractController
 	 */
 	public function articleCreate(): Response
 	{
-		$entityManager = $this->getDoctrine()->getManager();
-		$repository = $this->getDoctrine()->getRepository(Article::class);
+		$articleRepository = $this->getDoctrine()->getRepository(Article::class);
 
-		$lastArticle = $repository->findOneBy([],
-			['id' => 'DESC']);
-
-		$lastArticleId = 1;
-		if (!is_null($lastArticle)) {
-			$lastArticleId = $lastArticle->getId();
-		}
-
-		$article = new Article();
-		$article->setTitle('new article');
-		$article->setText('article text');
-		$article->setUrl($lastArticleId + 1);
-
-		$entityManager->persist($article);
-
-		$entityManager->flush();
+		$article = $articleRepository->createNewArticle();
 
 		return $this->redirectToRoute('admin_article_edit', array('id' => $article->getId()));
 	}
@@ -75,11 +55,7 @@ class AdminController extends AbstractController
 			throw $this->createNotFoundException('Article does not exist.');
 		}
 
-		$form = $this->createFormBuilder($articleEntity)->getForm()
-			->add('title', TextType::class)
-			->add('date', DateTimeType::class)
-			->add('text', TextareaType::class, array('attr' => array('class' => 'ckeditor')))
-			->add('save', SubmitType::class, array('label' => 'Edit article', 'attr' => array('class' => 'btn btn-primary')));
+		$form = $this->createForm(ArticleType::class, $articleEntity);
 
 		$form->handleRequest($request);
 
@@ -88,13 +64,8 @@ class AdminController extends AbstractController
 
 			if ($request->request->has('new_tag') && $request->request->get('new_tag') != '') {
 				$repositoryTags = $this->getDoctrine()->getRepository(Tag::class);
-				$tagEntity = $repositoryTags->findOneBy(['name' => $request->request->get('new_tag')]);
 
-				if ($tagEntity == null) {
-					$tagEntity = new Tag();
-					$tagEntity->setName($request->request->get('new_tag'));
-					$entityManager->persist($tagEntity);
-				}
+				$tagEntity = $repositoryTags->createNewTagIfNeeded($request->request->get('new_tag'));
 
 				$articleEntity->addTag($tagEntity);
 			}
@@ -116,41 +87,21 @@ class AdminController extends AbstractController
 	 */
 	public function articleToggleVisibility($id): Response
 	{
-		$entityManager = $this->getDoctrine()->getManager();
 		$repository = $this->getDoctrine()->getRepository(Article::class);
 
-		$article = $repository->find($id);
-
-		if (is_null($article)) {
-			throw $this->createNotFoundException('Article does not exist.');
-		}
-
-		$article->setActive(!$article->getActive());
-
-		$entityManager->flush();
+		$repository->toggleArticleVisibility($id);
 
 		return $this->redirectToRoute('admin');
 	}
 
 	/**
-	 * @Route("/admin/article/{articleId}/removeTag/{tagId}", name="admin_article_remove_tag")
+	 * @Route("/admin/article/{articleId}/remove-tag/{tagId}", name="admin_article_remove_tag")
 	 */
 	public function articleRemoveTag($articleId, $tagId): Response
 	{
-		$entityManager = $this->getDoctrine()->getManager();
 		$articleRepository = $this->getDoctrine()->getRepository(Article::class);
-		$tagRepository = $this->getDoctrine()->getRepository(Tag::class);
 
-		$articleEntity = $articleRepository->find($articleId);
-		$tagEntity = $tagRepository->find($tagId);
-
-		if (is_null($articleEntity) || is_null($tagEntity)) {
-			throw $this->createNotFoundException('Article/Tag relation does not exist.');
-		}
-
-		$articleEntity->removeTag($tagEntity);
-
-		$entityManager->flush();
+		$articleRepository->removeArticleTagById($articleId, $tagId);
 
 		return $this->redirectToRoute('admin_article_edit', array('id' => $articleId));
 	}

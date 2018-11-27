@@ -19,9 +19,7 @@ class ApiController extends AbstractController
     {
 		$repository = $this->getDoctrine()->getRepository(Article::class);
 
-		$articles = $repository->findBy([
-			'active' => true],
-			['date' => 'DESC']);
+		$articles = $repository->getActiveArticlesOrderedByDate();
 
 		$json = $serializer->serialize(
 			$articles,
@@ -39,7 +37,6 @@ class ApiController extends AbstractController
 	 */
 	public function articleDetail($id, SerializerInterface $serializer)
 	{
-		$entityManager = $this->getDoctrine()->getManager();
 		$repository = $this->getDoctrine()->getRepository(Article::class);
 
 		$article = $repository->findOneBy([
@@ -51,9 +48,7 @@ class ApiController extends AbstractController
 			throw $this->createNotFoundException('Article does not exist.');
 		}
 
-		$article->setViews($article->getViews() + 1);
-
-		$entityManager->flush();
+		$repository->incrementArticleViews($article);
 
 		$json = $serializer->serialize(
 			$article,

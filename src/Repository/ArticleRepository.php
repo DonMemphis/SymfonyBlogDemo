@@ -3,7 +3,9 @@
 namespace App\Repository;
 
 use App\Entity\Article;
+use App\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
@@ -19,32 +21,96 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
-    // /**
-    //  * @return Article[] Returns an array of Article objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('a.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+	/**
+	 * @return Article[]
+	 */
+    public function getArticlesOrderedByDate() {
+		$articles = $this->findBy([],
+			['date' => 'DESC']
+		);
 
-    /*
-    public function findOneBySomeField($value): ?Article
-    {
-        return $this->createQueryBuilder('a')
-            ->andWhere('a.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
+		return $articles;
+	}
+
+	/**
+	 * @return Article[]
+	 */
+	public function getActiveArticlesOrderedByDate() {
+		$articles = $this->findBy([
+			'active' => true],
+			['date' => 'DESC']);
+
+		return $articles;
+	}
+
+	/**
+	 * @return Article
+	 */
+	public function createNewArticle() : Article {
+		$entityManager = $this->getEntityManager();
+
+		$lastArticle = $this->findOneBy([],
+			['id' => 'DESC']);
+
+		$lastArticleId = 0;
+		if (!is_null($lastArticle)) {
+			$lastArticleId = $lastArticle->getId();
+		}
+
+		$article = new Article();
+		$article->setTitle('new article');
+		$article->setText('article text');
+		$article->setUrl($lastArticleId + 1);
+
+		$entityManager->persist($article);
+		$entityManager->flush();
+
+		return $article;
+	}
+
+	/**
+	 * @return Article
+	 */
+	public function toggleArticleVisibility($articleId) : Article {
+		$article = $this->find($articleId);
+
+		$article->setActive(!$article->getActive());
+
+		$this->getEntityManager()->flush();
+
+		return $article;
+	}
+
+	/**
+	 * @return Article
+	 */
+	public function removeArticleTagById($articleId, $tagId) : Article {
+		$entityManager = $this->getEntityManager();
+
+		$tagRepository = $entityManager->getRepository(Tag::class);
+
+		$articleEntity = $this->find($articleId);
+		$tagEntity = $tagRepository->find($tagId);
+
+		if (!is_null($articleEntity)) {
+			$articleEntity->removeTag($tagEntity);
+			$entityManager->flush();
+		}
+
+		return $articleEntity;
+	}
+
+	/**
+	 * @return Article
+	 */
+	public function incrementArticleViews($articleEntity) : Article {
+		$entityManager = $this->getEntityManager();
+
+		$articleEntity->setViews($articleEntity->getViews() + 1);
+
+		$entityManager->flush();
+
+		return $articleEntity;
+	}
+
 }

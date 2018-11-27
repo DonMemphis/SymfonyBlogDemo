@@ -64,9 +64,7 @@ class BlogController extends AbstractController
 			throw $this->createNotFoundException();
 		}
 
-		$article->setViews($article->getViews() + 1);
-
-		$entityManager->flush();
+		$repository->incrementArticleViews($article);
 
 		return $this->render('articleDetail.html.twig', [
 			'article' => $article,
