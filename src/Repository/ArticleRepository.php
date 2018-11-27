@@ -103,7 +103,7 @@ class ArticleRepository extends ServiceEntityRepository
 	/**
 	 * @return Article
 	 */
-	public function incrementArticleViews($articleEntity) : Article {
+	public function incrementArticleViews(Article $articleEntity) : Article {
 		$entityManager = $this->getEntityManager();
 
 		$articleEntity->setViews($articleEntity->getViews() + 1);

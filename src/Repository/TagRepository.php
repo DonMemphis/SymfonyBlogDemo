@@ -22,7 +22,7 @@ class TagRepository extends ServiceEntityRepository
 	/**
 	 * @return Tag
 	 */
-	public function createNewTagIfNeeded(string $tagName) {
+	public function createNewTagIfNeeded(string $tagName) : Tag {
 		$tagEntity = $this->findOneBy(['name' => $tagName]);
 
 		if ($tagEntity == null) {
