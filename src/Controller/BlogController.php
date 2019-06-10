@@ -2,60 +2,39 @@
 
 namespace App\Controller;
 
+use App\Repository\ArticleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Article;
+use Knp\Component\Pager\PaginatorInterface;
 
 class BlogController extends AbstractController
 {
 	/**
 	 * @Route("/", name="index")
 	 */
-	public function index(Request $request): Response
+	public function index(Request $request, PaginatorInterface $paginator, ArticleRepository $articleRepository): Response
 	{
-		$repository = $this->getDoctrine()->getRepository(Article::class);
+		$articlesQuery = $articleRepository->createQueryBuilder('a')
+			->andWhere('a.active = 1')
+			->orderBy('a.date', 'DESC')
+			->getQuery();
 
-		$page = $request->query->get('page') ?: 1;
-
-		$recordsTotal = count($repository->findBy(['active' => true]));
-		$recordsPerPage = 2;
-
-		$pagesTotal = 1;
-		if ($recordsTotal > 0) {
-			$pagesTotal = ceil($recordsTotal / $recordsPerPage);
-		}
-
-		if ($page != 1) {
-			if ($page < 1 || $page > $pagesTotal) {
-				throw $this->createNotFoundException();
-			}
-		}
-
-		$articles = $repository->findBy(
-			['active' => true],
-			['date' => 'DESC'],
-			$recordsPerPage,
-			(($page - 1) * $recordsPerPage)
-		);
+		$articles = $paginator->paginate($articlesQuery, $request->query->getInt('page', 1), 2);
 
 		return $this->render('index.html.twig', [
-			'articles' => $articles,
-			'page' => $page,
-			'pages' => $pagesTotal
+			'articles' => $articles
 		]);
 	}
 
 	/**
 	 * @Route("/article/{url}/", name="article_detail")
 	 */
-	public function articleDetail($url): Response
+	public function articleDetail($url, ArticleRepository $articleRepository): Response
 	{
-		$entityManager = $this->getDoctrine()->getManager();
-		$repository = $this->getDoctrine()->getRepository(Article::class);
-
-		$article = $repository->findOneBy([
+		$article = $articleRepository->findOneBy([
 			'url' => $url,
 			'active' => true
 		]);
@@ -64,7 +43,7 @@ class BlogController extends AbstractController
 			throw $this->createNotFoundException();
 		}
 
-		$repository->incrementArticleViews($article);
+		$articleRepository->incrementArticleViews($article);
 
 		return $this->render('articleDetail.html.twig', [
 			'article' => $article,
